@@ -8,6 +8,7 @@ input {
   border: 1px solid #999;
   padding: 1rem;
   width: 500px;
+  border-radius: 25px;
 }
 
 .no-suggestions {
@@ -25,7 +26,7 @@ input {
   border-top-width: 0;
   list-style: none;
   margin-top: 0;
-  max-height: 143px;
+  max-height: 243px;
   overflow-y: auto;
   padding-left: 0;
   width: calc(500px + 1rem);
