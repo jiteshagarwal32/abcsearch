@@ -1,7 +1,7 @@
 import React,{ useState,useEffect } from 'react';
 import './App.css';
-import AutoComplete from './components/AutoComplete';
-import Header from './components/Header';
+import AutoComplete from './components/AutoComplete/AutoComplete';
+import Header from './components/Header/Header';
 
 
 

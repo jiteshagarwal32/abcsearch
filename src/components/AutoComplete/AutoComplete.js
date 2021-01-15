@@ -1,14 +1,25 @@
-import React, { Component } from "react";
+import React, { Component, createRef } from "react";
 import PropTypes from "prop-types";
+import Debounce from'../Debounce'
 
 class Autocomplete extends Component {
   static propTypes = {
     suggestions: PropTypes.instanceOf(Array)
+
   };
 
   static defaultProps = {
     suggestions: []
   };
+ 
+  inputRef = createRef();
+
+  componentDidUpdate(prevProps, prevState) {
+    if (prevState.userInput !== this.state.userInput) {
+      this.inputRef.current.value = this.state.userInput;
+    }
+  }
+
 
   constructor(props) {
     super(props);
@@ -23,11 +34,12 @@ class Autocomplete extends Component {
       // What the user has entered
       userInput: ""
     };
+    this.onChange = Debounce(this.onChange,1000).bind(this);
   }
 
   onChange = (e) => {
     const { suggestions } = this.props;
-    const userInput = e.currentTarget.value;
+    const userInput = e.target.value;
 
     // Filter our suggestions that don't contain the user's input
     const filteredSuggestions = suggestions.filter(
@@ -40,17 +52,20 @@ class Autocomplete extends Component {
       activeSuggestion: 0,
       filteredSuggestions,
       showSuggestions: true,
-      userInput: e.currentTarget.value
+      userInput
     });
   };
 
-  onClick = (e) => {
+  onClick = (index) => {
+    const { filteredSuggestions } = this.state;
     this.setState({
       activeSuggestion: 0,
       filteredSuggestions: [],
       showSuggestions: false,
-      userInput: e.currentTarget.innerText
+      userInput: filteredSuggestions[index]+ " "
     });
+    this.inputRef.current.focus() // this line changed
+
   };
 
   onKeyDown = (e) => {
@@ -103,14 +118,12 @@ class Autocomplete extends Component {
           <ul className="suggestions">
             {filteredSuggestions.map((suggestion, index) => {
               let className;
-
               // Flag the active suggestion with a class
               if (index === activeSuggestion) {
                 className = "suggestion-active";
               }
-
               return (
-                <li className={className} key={suggestion} onClick={onClick}>
+                <li className={className} key={suggestion} onClick={() => onClick(index)}>
                   {suggestion}
                 </li>
               );
@@ -129,10 +142,10 @@ class Autocomplete extends Component {
     return (
       <>
         <input
+          ref={this.inputRef}
           type="text"
           onChange={onChange}
-          onKeyDown={onKeyDown}
-          value={userInput}
+          onKeyDown={onKeyDown}        
         />
         {suggestionsListComponent}
       </>
