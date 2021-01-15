@@ -1,4 +1,4 @@
-import React, { Component, Fragment } from "react";
+import React, { Component } from "react";
 import PropTypes from "prop-types";
 
 class Autocomplete extends Component {
@@ -25,12 +25,68 @@ class Autocomplete extends Component {
     };
   }
 
+  onChange = (e) => {
+    const { suggestions } = this.props;
+    const userInput = e.currentTarget.value;
+
+    // Filter our suggestions that don't contain the user's input
+    const filteredSuggestions = suggestions.filter(
+      (suggestion) =>
+        suggestion &&
+        suggestion.toLowerCase().indexOf(userInput.toLowerCase()) > -1
+    );
+
+    this.setState({
+      activeSuggestion: 0,
+      filteredSuggestions,
+      showSuggestions: true,
+      userInput: e.currentTarget.value
+    });
+  };
+
+  onClick = (e) => {
+    this.setState({
+      activeSuggestion: 0,
+      filteredSuggestions: [],
+      showSuggestions: false,
+      userInput: e.currentTarget.innerText
+    });
+  };
+
+  onKeyDown = (e) => {
+    const { activeSuggestion, filteredSuggestions } = this.state;
+
+    // User pressed the enter key
+    if (e.keyCode === 13) {
+      this.setState({
+        activeSuggestion: 0,
+        showSuggestions: false,
+        userInput: filteredSuggestions[activeSuggestion]
+      });
+    }
+    // User pressed the up arrow
+    else if (e.keyCode === 38) {
+      if (activeSuggestion === 0) {
+        return;
+      }
+
+      this.setState({ activeSuggestion: activeSuggestion - 1 });
+    }
+    // User pressed the down arrow
+    else if (e.keyCode === 40) {
+      if (activeSuggestion - 1 === filteredSuggestions.length) {
+        return;
+      }
+
+      this.setState({ activeSuggestion: activeSuggestion + 1 });
+    }
+  };
 
   render() {
     const {
       onChange,
       onClick,
-      
+      onKeyDown,
       state: {
         activeSuggestion,
         filteredSuggestions,
@@ -71,15 +127,15 @@ class Autocomplete extends Component {
     }
 
     return (
-      <Fragment>
+      <>
         <input
           type="text"
           onChange={onChange}
-          
+          onKeyDown={onKeyDown}
           value={userInput}
         />
         {suggestionsListComponent}
-      </Fragment>
+      </>
     );
   }
 }

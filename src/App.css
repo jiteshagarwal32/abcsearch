@@ -9,6 +9,7 @@ input {
   padding: 1rem;
   width: 500px;
   border-radius: 25px;
+  cursor: pointer;
 }
 
 .no-suggestions {
