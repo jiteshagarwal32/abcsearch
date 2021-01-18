@@ -1,35 +1,30 @@
 body {
   font-family: sans-serif;
+  background: #222;
+  color: #ffbf00;
+  padding: 1.5rem;
 }
 
 input {
-  display:block;
-  margin : 0 auto;
   border: 1px solid #999;
-  padding: 1rem;
-  width: 500px;
-  cursor: pointer;
+  padding: 0.5rem;
+  width: 300px;
 }
 
 .no-suggestions {
-  display:block;
-  margin : 0 auto;
-  text-align:center;
   color: #999;
   padding: 0.5rem;
 }
 
 .suggestions {
-  display:block;
-  margin : 0 auto;
-  border: 1px solid #999;
+  border: 1px solid #888;
   border-top-width: 0;
   list-style: none;
   margin-top: 0;
-  max-height: 243px;
+  max-height: 143px;
   overflow-y: auto;
   padding-left: 0;
-  width: calc(500px + 1rem);
+  width: calc(300px + 1rem);
 }
 
 .suggestions li {
@@ -38,8 +33,8 @@ input {
 
 .suggestion-active,
 .suggestions li:hover {
-  background-color: #008f68;
-  color: #fae042;
+  background-color: #cd9a00;
+  color: white;
   cursor: pointer;
   font-weight: 700;
 }

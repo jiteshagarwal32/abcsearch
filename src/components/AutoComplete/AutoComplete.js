@@ -1,17 +1,9 @@
-import React, { Component, createRef } from "react";
-import PropTypes from "prop-types";
-import Debounce from'../Debounce'
+import React, { Component, Fragment, createRef } from "react";
+import Debounce from "../Debounce";
+import getSuggestions from "./MockApi";
 
-class Autocomplete extends Component {
-  static propTypes = {
-    suggestions: PropTypes.instanceOf(Array)
+class AutoComplete extends Component {
 
-  };
-
-  static defaultProps = {
-    suggestions: []
-  };
- 
   inputRef = createRef();
 
   componentDidUpdate(prevProps, prevState) {
@@ -19,7 +11,6 @@ class Autocomplete extends Component {
       this.inputRef.current.value = this.state.userInput;
     }
   }
-
 
   constructor(props) {
     super(props);
@@ -34,27 +25,8 @@ class Autocomplete extends Component {
       // What the user has entered
       userInput: ""
     };
-    this.onChange = Debounce(this.onChange,1000).bind(this);
+    this.onChange = Debounce(this.onChange, 300).bind(this);
   }
-
-  onChange = (e) => {
-    const { suggestions } = this.props;
-    const userInput = e.target.value;
-
-    // Filter our suggestions that don't contain the user's input
-    const filteredSuggestions = suggestions.filter(
-      (suggestion) =>
-        suggestion &&
-        suggestion.toLowerCase().indexOf(userInput.toLowerCase()) > -1
-    );
-
-    this.setState({
-      activeSuggestion: 0,
-      filteredSuggestions,
-      showSuggestions: true,
-      userInput
-    });
-  };
 
   onClick = (index) => {
     const { filteredSuggestions } = this.state;
@@ -62,10 +34,9 @@ class Autocomplete extends Component {
       activeSuggestion: 0,
       filteredSuggestions: [],
       showSuggestions: false,
-      userInput: filteredSuggestions[index]+ " "
+      userInput: filteredSuggestions[index] + " "
     });
-    this.inputRef.current.focus() // this line changed
-
+    this.inputRef.current.focus()
   };
 
   onKeyDown = (e) => {
@@ -73,28 +44,54 @@ class Autocomplete extends Component {
 
     // User pressed the enter key
     if (e.keyCode === 13) {
+      if (!this.state.showSuggestions) return; // if suggestions are not shown, why to do all next?
+
+      const currentUserInput = this.state.userInput;
+      let lastSpace = currentUserInput.lastIndexOf(" "); // find the last space on the string
+      let preWords =
+        lastSpace > 0 ? currentUserInput.slice(0, lastSpace) + " " : "";
+      // gets the substring from the beginning to the last space (before last word that should be autocompleted)
+
+      let newUserInput = preWords + filteredSuggestions[activeSuggestion] + " ";
+      // then concat the rest of the autocompleted word, (and obviously the last space)
+
       this.setState({
         activeSuggestion: 0,
         showSuggestions: false,
-        userInput: filteredSuggestions[activeSuggestion]
+        userInput: newUserInput
       });
+      this.inputRef.current.focus()
     }
     // User pressed the up arrow
     else if (e.keyCode === 38) {
-      if (activeSuggestion === 0) {
-        return;
-      }
-
-      this.setState({ activeSuggestion: activeSuggestion - 1 });
+      if (activeSuggestion === 0)
+        this.setState({ activeSuggestion: filteredSuggestions.length - 1 });
+      else this.setState({ activeSuggestion: activeSuggestion - 1 });
     }
     // User pressed the down arrow
     else if (e.keyCode === 40) {
-      if (activeSuggestion - 1 === filteredSuggestions.length) {
-        return;
-      }
-
-      this.setState({ activeSuggestion: activeSuggestion + 1 });
+      if (activeSuggestion === filteredSuggestions.length - 1)
+        this.setState({ activeSuggestion: 0 });
+      else this.setState({ activeSuggestion: activeSuggestion + 1 });
     }
+  };
+
+  onChange = async (e) => {
+    const userInput = e.target.value;
+    if (userInput === "") return; // if user cleans the input
+    let lastWord = userInput.split(" ").slice(-1)[0];
+
+    if (!lastWord || lastWord === "") return; // if last word is void, dont make the fetch
+    let filteredSuggestions = (await getSuggestions(lastWord)) || [];
+
+    if (!this.inputRef.current) return;
+    
+    this.setState({
+      activeSuggestion: 0,
+      filteredSuggestions,
+      showSuggestions: true,
+      userInput
+    });
   };
 
   render() {
@@ -118,12 +115,18 @@ class Autocomplete extends Component {
           <ul className="suggestions">
             {filteredSuggestions.map((suggestion, index) => {
               let className;
+
               // Flag the active suggestion with a class
               if (index === activeSuggestion) {
                 className = "suggestion-active";
               }
+
               return (
-                <li className={className} key={suggestion} onClick={() => onClick(index)}>
+                <li
+                  className={className}
+                  key={suggestion}
+                  onClick={() => onClick(index)}
+                >
                   {suggestion}
                 </li>
               );
@@ -133,24 +136,25 @@ class Autocomplete extends Component {
       } else {
         suggestionsListComponent = (
           <div className="no-suggestions">
-            <em>You are going the wrong way baby!!</em>
+            <em>No suggestions, you're on your own!</em>
           </div>
         );
       }
     }
 
     return (
-      <>
+      <Fragment>
         <input
           ref={this.inputRef}
+          placeholder="Search important stuff" 
           type="text"
           onChange={onChange}
-          onKeyDown={onKeyDown}        
+          onKeyDown={onKeyDown}
         />
         {suggestionsListComponent}
-      </>
+      </Fragment>
     );
   }
 }
 
-export default Autocomplete;
+export default AutoComplete;
