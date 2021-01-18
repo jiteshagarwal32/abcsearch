@@ -1,9 +1,8 @@
 import React, { Component, Fragment, createRef } from "react";
-import Debounce from "../Debounce";
+import debounce from "../utils";
 import getSuggestions from "./MockApi";
 
 class AutoComplete extends Component {
-
   inputRef = createRef();
 
   componentDidUpdate(prevProps, prevState) {
@@ -25,18 +24,52 @@ class AutoComplete extends Component {
       // What the user has entered
       userInput: ""
     };
-    this.onChange = Debounce(this.onChange, 300).bind(this);
+    this.onChange = debounce(this.onChange, 300).bind(this);
+    this.wrapperRef = createRef();
+    // this.setWrapperRef = this.setWrapperRef.bind(this);
+    this.handleClickOutside = this.handleClickOutside.bind(this);
+  }
+  componentDidMount() {
+    document.addEventListener("mousedown", this.handleClickOutside);
+  }
+  componentWillUnmount() {
+    document.removeEventListener("mousedown", this.handleClickOutside);
+  }
+
+  handleClickOutside(event) {
+    const {
+      showSuggestions,
+      activeSuggestion,
+      filteredSuggestions,
+      userInput
+    } = this.state;
+    if (this.wrapperRef && !this.wrapperRef.current.contains(event.target)) {
+      this.setState({
+        activeSuggestion: 0,
+        filteredSuggestions,
+        showSuggestions: false,
+        userInput
+      });
+    }
   }
 
   onClick = (index) => {
-    const { filteredSuggestions } = this.state;
+    const { filteredSuggestions, activeSuggestion } = this.state;
+    const currentUserInput = this.state.userInput;
+    let lastSpace = currentUserInput.lastIndexOf(" "); // find the last space on the string
+    let preWords =
+      lastSpace > 0 ? currentUserInput.slice(0, lastSpace) + " " : "";
+    // gets the substring from the beginning to the last space (before last word that should be autocompleted)
+
+    let newUserInput = preWords + filteredSuggestions[index] + " ";
+    // then concat the rest of the autocompleted word, (and obviously the last space)
     this.setState({
       activeSuggestion: 0,
       filteredSuggestions: [],
       showSuggestions: false,
-      userInput: filteredSuggestions[index] + " "
+      userInput: newUserInput
     });
-    this.inputRef.current.focus()
+    this.inputRef.current.focus();
   };
 
   onKeyDown = (e) => {
@@ -60,7 +93,7 @@ class AutoComplete extends Component {
         showSuggestions: false,
         userInput: newUserInput
       });
-      this.inputRef.current.focus()
+      this.inputRef.current.focus();
     }
     // User pressed the up arrow
     else if (e.keyCode === 38) {
@@ -85,7 +118,7 @@ class AutoComplete extends Component {
     let filteredSuggestions = (await getSuggestions(lastWord)) || [];
 
     if (!this.inputRef.current) return;
-    
+
     this.setState({
       activeSuggestion: 0,
       filteredSuggestions,
@@ -143,16 +176,16 @@ class AutoComplete extends Component {
     }
 
     return (
-      <Fragment>
+      <div ref={this.wrapperRef}>
         <input
           ref={this.inputRef}
-          placeholder="Search important stuff" 
+          placeholder="Search important stuff"
           type="text"
           onChange={onChange}
           onKeyDown={onKeyDown}
         />
         {suggestionsListComponent}
-      </Fragment>
+      </div>
     );
   }
 }

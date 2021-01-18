@@ -31,9 +31,14 @@ input {
   padding: 0.5rem;
 }
 
-.suggestion-active,
-.suggestions li:hover {
+.suggestion-active {
   background-color: #cd9a00;
+  color: white;
+  cursor: pointer;
+  font-weight: 700;
+}
+.suggestions li:hover {
+  background-color: 	#F0E68C;
   color: white;
   cursor: pointer;
   font-weight: 700;
