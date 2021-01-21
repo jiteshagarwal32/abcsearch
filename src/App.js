@@ -1,6 +1,6 @@
-import React from 'react';
-import './App.css';
-import AutoComplete from './components/AutoComplete/AutoComplete';
+import React from "react";
+import "./App.css";
+import AutoComplete from "./components/AutoComplete/AutoComplete";
 
 function App() {
 
@@ -12,4 +12,4 @@ function App() {
   );
 }
 
-export default App
+export default App;

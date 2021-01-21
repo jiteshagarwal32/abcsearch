@@ -1,4 +1,4 @@
-import React, { Component, Fragment, createRef } from "react";
+import React, { Component, createRef } from "react";
 import debounce from "../utils";
 import getSuggestions from "./MockApi";
 
@@ -37,12 +37,7 @@ class AutoComplete extends Component {
   }
 
   handleClickOutside(event) {
-    const {
-      showSuggestions,
-      activeSuggestion,
-      filteredSuggestions,
-      userInput
-    } = this.state;
+    const { filteredSuggestions,userInput} = this.state;
     if (this.wrapperRef && !this.wrapperRef.current.contains(event.target)) {
       this.setState({
         activeSuggestion: 0,
@@ -54,11 +49,10 @@ class AutoComplete extends Component {
   }
 
   onClick = (index) => {
-    const { filteredSuggestions, activeSuggestion } = this.state;
+    const { filteredSuggestions} = this.state;
     const currentUserInput = this.state.userInput;
     let lastSpace = currentUserInput.lastIndexOf(" "); // find the last space on the string
-    let preWords =
-      lastSpace > 0 ? currentUserInput.slice(0, lastSpace) + " " : "";
+    let preWords = lastSpace > 0 ? currentUserInput.slice(0, lastSpace) + " " : "";
     // gets the substring from the beginning to the last space (before last word that should be autocompleted)
 
     let newUserInput = preWords + filteredSuggestions[index] + " ";
@@ -81,8 +75,7 @@ class AutoComplete extends Component {
 
       const currentUserInput = this.state.userInput;
       let lastSpace = currentUserInput.lastIndexOf(" "); // find the last space on the string
-      let preWords =
-        lastSpace > 0 ? currentUserInput.slice(0, lastSpace) + " " : "";
+      let preWords = lastSpace > 0 ? currentUserInput.slice(0, lastSpace) + " " : "";
       // gets the substring from the beginning to the last space (before last word that should be autocompleted)
 
       let newUserInput = preWords + filteredSuggestions[activeSuggestion] + " ";
@@ -149,6 +142,11 @@ class AutoComplete extends Component {
             {filteredSuggestions.map((suggestion, index) => {
               let className;
 
+              let lastWord = userInput.split(" ").slice(-1)[0];
+              let word = lastWord;
+              let matchStart = suggestion.indexOf(word);
+              let endOfMatch = matchStart + word.length;
+
               // Flag the active suggestion with a class
               if (index === activeSuggestion) {
                 className = "suggestion-active";
@@ -160,7 +158,11 @@ class AutoComplete extends Component {
                   key={suggestion}
                   onClick={() => onClick(index)}
                 >
-                  {suggestion}
+                  {suggestion.slice(0, matchStart)}
+                  <span style={{ color: "green" }}>
+                    {suggestion.slice(matchStart, endOfMatch)}
+                  </span>
+                  {suggestion.slice(endOfMatch, suggestion.length)}
                 </li>
               );
             })}
@@ -169,7 +171,7 @@ class AutoComplete extends Component {
       } else {
         suggestionsListComponent = (
           <div className="no-suggestions">
-            <em>No suggestions, you're on your own!</em>
+            <em>No suggestions, you&apos;re on your own!</em>
           </div>
         );
       }
@@ -180,7 +182,7 @@ class AutoComplete extends Component {
         <input
           ref={this.inputRef}
           placeholder="Search important stuff"
-          type="text"
+          type="search"
           onChange={onChange}
           onKeyDown={onKeyDown}
         />
