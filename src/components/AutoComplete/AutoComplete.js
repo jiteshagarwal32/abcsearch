@@ -3,13 +3,6 @@ import debounce from "../utils";
 import getSuggestions from "./MockApi";
 
 class AutoComplete extends Component {
-  inputRef = createRef();
-
-  componentDidUpdate(prevProps, prevState) {
-    if (prevState.userInput !== this.state.userInput) {
-      this.inputRef.current.value = this.state.userInput;
-    }
-  }
 
   constructor(props) {
     super(props);
@@ -24,38 +17,50 @@ class AutoComplete extends Component {
       // What the user has entered
       userInput: ""
     };
-    this.onChange = debounce(this.onChange, 300).bind(this);
+    
+    this.getSuggestionsFromApi = debounce(this.getSuggestionsFromApi, 600).bind(this);
     this.wrapperRef = createRef();
-    // this.setWrapperRef = this.setWrapperRef.bind(this);
+    this.inputRef = createRef();
     this.handleClickOutside = this.handleClickOutside.bind(this);
   }
+
   componentDidMount() {
     document.addEventListener("mousedown", this.handleClickOutside);
   }
+  
   componentWillUnmount() {
     document.removeEventListener("mousedown", this.handleClickOutside);
   }
 
   handleClickOutside(event) {
-    const { filteredSuggestions,userInput} = this.state;
     if (this.wrapperRef && !this.wrapperRef.current.contains(event.target)) {
       this.setState({
         activeSuggestion: 0,
-        filteredSuggestions,
         showSuggestions: false,
-        userInput
       });
+    }
+  }
+
+  getSuggestionsFromApi = async (text) => {
+    try {
+      const filteredSuggestions = await getSuggestions(text);
+      this.setState({
+        filteredSuggestions,
+        showSuggestions: true,
+      });
+    } catch (error) {
+      console.error(error);
     }
   }
 
   onClick = (index) => {
     const { filteredSuggestions} = this.state;
     const currentUserInput = this.state.userInput;
-    let lastSpace = currentUserInput.lastIndexOf(" "); // find the last space on the string
-    let preWords = lastSpace > 0 ? currentUserInput.slice(0, lastSpace) + " " : "";
+    const lastSpace = currentUserInput.lastIndexOf(" "); // find the last space on the string
+    const preWords = lastSpace > 0 ? currentUserInput.slice(0, lastSpace) + " " : "";
     // gets the substring from the beginning to the last space (before last word that should be autocompleted)
 
-    let newUserInput = preWords + filteredSuggestions[index] + " ";
+    const newUserInput = preWords + filteredSuggestions[index] + " ";
     // then concat the rest of the autocompleted word, (and obviously the last space)
     this.setState({
       activeSuggestion: 0,
@@ -73,20 +78,7 @@ class AutoComplete extends Component {
     if (e.keyCode === 13) {
       if (!this.state.showSuggestions) return; // if suggestions are not shown, why to do all next?
 
-      const currentUserInput = this.state.userInput;
-      let lastSpace = currentUserInput.lastIndexOf(" "); // find the last space on the string
-      let preWords = lastSpace > 0 ? currentUserInput.slice(0, lastSpace) + " " : "";
-      // gets the substring from the beginning to the last space (before last word that should be autocompleted)
-
-      let newUserInput = preWords + filteredSuggestions[activeSuggestion] + " ";
-      // then concat the rest of the autocompleted word, (and obviously the last space)
-
-      this.setState({
-        activeSuggestion: 0,
-        showSuggestions: false,
-        userInput: newUserInput
-      });
-      this.inputRef.current.focus();
+      this.onClick(activeSuggestion);
     }
     // User pressed the up arrow
     else if (e.keyCode === 38) {
@@ -102,36 +94,28 @@ class AutoComplete extends Component {
     }
   };
 
-  onChange = async (e) => {
+  onChange = (e) => {
     const userInput = e.target.value;
-    if (userInput === "") return; // if user cleans the input
-    let lastWord = userInput.split(" ").slice(-1)[0];
+    const lastWord = userInput.split(" ").slice(-1)[0];
 
-    if (!lastWord || lastWord === "") return; // if last word is void, dont make the fetch
-    let filteredSuggestions = (await getSuggestions(lastWord)) || [];
-
-    if (!this.inputRef.current) return;
+    if (lastWord && lastWord !== "") {  // if last word is void, dont make the fetch
+      this.getSuggestionsFromApi(lastWord);
+    }
 
     this.setState({
       activeSuggestion: 0,
-      filteredSuggestions,
-      showSuggestions: true,
-      userInput
+      userInput,
+      showSuggestions: false,
     });
   };
 
   render() {
     const {
-      onChange,
-      onClick,
-      onKeyDown,
-      state: {
-        activeSuggestion,
-        filteredSuggestions,
-        showSuggestions,
-        userInput
-      }
-    } = this;
+      activeSuggestion,
+      filteredSuggestions,
+      showSuggestions,
+      userInput
+    } = this.state;
 
     let suggestionsListComponent;
 
@@ -140,23 +124,14 @@ class AutoComplete extends Component {
         suggestionsListComponent = (
           <ul className="suggestions">
             {filteredSuggestions.map((suggestion, index) => {
-              let className;
-
-              let lastWord = userInput.split(" ").slice(-1)[0];
-              let word = lastWord;
-              let matchStart = suggestion.indexOf(word);
-              let endOfMatch = matchStart + word.length;
-
-              // Flag the active suggestion with a class
-              if (index === activeSuggestion) {
-                className = "suggestion-active";
-              }
-
+              const word = userInput.split(" ").slice(-1)[0];
+              const matchStart = suggestion.indexOf(word);
+              const endOfMatch = matchStart + word.length;
               return (
                 <li
-                  className={className}
+                  className={ index === activeSuggestion ? "suggestion-active" : "" }
                   key={suggestion}
-                  onClick={() => onClick(index)}
+                  onClick={() => this.onClick(index)}
                 >
                   {suggestion.slice(0, matchStart)}
                   <span style={{ color: "green" }}>
@@ -183,8 +158,9 @@ class AutoComplete extends Component {
           ref={this.inputRef}
           placeholder="Search important stuff"
           type="search"
-          onChange={onChange}
-          onKeyDown={onKeyDown}
+          onChange={this.onChange}
+          onKeyDown={this.onKeyDown}
+          value={userInput}
         />
         {suggestionsListComponent}
       </div>
